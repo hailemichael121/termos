@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000"
     android:fitsSystemWindows="true"
     android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="8dp"
+        android:paddingTop="2dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="2dp"
+        android:singleLine="true"
+        android:textSize="11sp"
+        android:typeface="monospace" />
 
     <ScrollView
         android:id="@+id/scroll"
@@ -17,9 +30,7 @@
             android:id="@+id/screen"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#33FF66"
             android:textIsSelectable="true"
-            android:textSize="13sp"
             android:typeface="monospace" />
     </ScrollView>
 
@@ -27,14 +38,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp">
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
 
         <TextView
             android:id="@+id/prompt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#33FF66"
-            android:textSize="13sp"
             android:typeface="monospace" />
 
         <EditText
@@ -45,8 +55,25 @@
             android:background="@null"
             android:imeOptions="actionSend"
             android:inputType="text"
-            android:textColor="#FFFFFF"
-            android:textSize="13sp"
             android:typeface="monospace" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button android:id="@+id/btnEsc" style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
+            android:minHeight="0dp" android:text="ESC" android:textSize="12sp" />
+        <Button android:id="@+id/btnUp" style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
+            android:minHeight="0dp" android:text="↑" android:textSize="14sp" />
+        <Button android:id="@+id/btnDown" style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
+            android:minHeight="0dp" android:text="↓" android:textSize="14sp" />
+        <Button android:id="@+id/btnTab" style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
+            android:minHeight="0dp" android:text="TAB" android:textSize="12sp" />
     </LinearLayout>
 </LinearLayout>
