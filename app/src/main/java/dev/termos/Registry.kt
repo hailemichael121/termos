@@ -1,6 +1,6 @@
 package dev.termos
 
-const val VERSION = "0.4.0"
+const val VERSION = "0.8.0"
 
 enum class Cat(val label: String) {
     APPS("apps"), WEB("web"), AI("ai"), LINUX("linux"), TOOLS("tools"), COMMS("notifications, contacts, sms"),
@@ -73,7 +73,7 @@ object Registry {
         Cmd("call", "call <name|number>", "dial a number or a contact", Cat.SYSTEM),
         Cmd("settings", "settings", "open Android settings", Cat.SYSTEM, root = true),
 
-        Cmd("lock", "lock", "lock the terminal now", Cat.SECURITY),
+        Cmd("lock", "lock", "lock the terminal now (shows the time you logged out)", Cat.SECURITY, aliases = listOf("logout")),
         Cmd("lockscreen", "lockscreen", "make TermOS your only lock (Android lock -> None)", Cat.SECURITY),
         Cmd("perms", "perms [name|all]", "check/fix: home lock battery notifications alarms overlay notifs contacts sms", Cat.SECURITY, example = "perms battery"),
         Cmd("keepalive", "keepalive [on|off]", "keep TermOS running (foreground notice) so timers/jobs/auto-lock stay reliable", Cat.SECURITY),
@@ -84,8 +84,10 @@ object Registry {
 
         Cmd("alias", "alias [name='command']", "show or define a shortcut", Cat.UI, example = "alias w='browse weather addis ababa'"),
         Cmd("unalias", "unalias <name>", "remove a shortcut", Cat.UI),
-        Cmd("config", "config [theme|vim|font|autolock|username] <value>", "show/change settings", Cat.UI),
+        Cmd("config", "config [theme|vim|font|autolock|autofocus|keyboard|username] <value>", "show/change settings", Cat.UI),
         Cmd("theme", "theme [name]", "list or set colour theme", Cat.UI),
+        Cmd("look", "look [color|style|title|banner|fill|sub|date|preview|reset|autofocus] ...", "visual settings: colours, text styles, banner, top bar text, date format", Cat.UI, example = "look color user #ff8800"),
+        Cmd("banner", "banner <words> | banner default|off|plain", "your words become block letters on the start/lock screen", Cat.UI, example = "banner YIHUN"),
         Cmd("vim", "vim on|off", "toggle vim-style modal navigation", Cat.UI)
     )
 
@@ -99,13 +101,14 @@ object Guide {
         "start" to """TermOS quick start
  1. First boot: create a password (6+ chars). It unlocks the terminal and is your sudo password.
  2. A short wizard sets theme, vim mode and your Gemini key (Enter keeps defaults). Rerun: setup
- 3. TermOS asks (once a day) to become your default launcher, switch Android's lock to None,
+ 3. TermOS asks (every time you open it, until done) to become your default launcher, switch Android's lock to None,
     allow unrestricted battery, notifications, exact alarms and 'lock over apps'. See: guide setup
  4. ls, open <app>, browse <words>, calc 2+2, todo add ..., timer 5m tea
- 5. help, cmds, guide <page>   |   TAB completes, ^C cancels, ESC = vim normal mode""",
+ 5. help, cmds, guide <page>   |   TAB completes, ^C cancels, ESC = vim normal mode
+ 6. Colours & layout: look   full guide: guide look   themes: theme   wizard: setup""",
 
         "setup" to """Setup prompts and permissions
- On open TermOS offers each of these (Set up / Later / Never ask):
+ On open TermOS offers each missing item in turn (action / Later = ask again in 1 hour / Never ask):
   home          make TermOS the default launcher (system picker)
   lock          set Android's lock to None so TermOS's password is the only lock
   battery       unrestricted battery: stops the system killing TermOS
@@ -122,7 +125,7 @@ object Guide {
         "lock" to """Locking
  TermOS locks on screen-off (even if the UI was closed) and on 'lock'.
  3 wrong passwords -> 5s wait, then 15s, 30s, 60s. 'sudo' remembers your password 5 min (sudo -k forgets).
- Android's own lock cannot be removed by an app. Run 'lockscreen' or 'perms lock' -> Screen lock -> None.
+ Android's own lock cannot be removed by an app. Run 'lockscreen' or 'perms lock' -> opens Screen lock (not the generic Security page).
  With 'overlay' allowed, TermOS jumps to the front on screen-off, so TermOS's lock is what you see.
  'config autolock off' needs sudo.""",
 
@@ -153,6 +156,27 @@ object Guide {
  ai do <task>          AI proposes up to 6 commands, you confirm with y / n.
                        It can never plan sudo, su, passwd, linux, uninstall, settings, lock, ai,
                        sms, scripts, jobs, notifs or contacts.""",
+
+        "look" to """Look & feel  (like Ubuntu Settings > Appearance)
+ look                      show everything
+ theme <name>              colour theme (guide themes)
+ look color <role> <#rrggbb|name|reset>     roles: user input output error dim banner time
+ look style <role> <normal|bold|italic|bolditalic>
+ banner YIHUN              your words become block letters on the start/lock screen (max 24 characters)
+ banner default|off|plain  back to the TermOS logo / hide it / simple text
+ look fill #               symbol that draws the letters (one character)
+ look sub <tagline|off>    small line under the banner
+ look title <text|reset>   top bar text, tokens {version} {user}   e.g. look title {user} OS {version}
+ look date <pattern|reset> date format of the time lines, e.g. yyyy-MM-dd HH:mm
+ look autofocus on|off     cursor + keyboard jump to the terminal on open (default on)
+ look lock center|terminal|minimal|emblem   lock screen layout (center = big clock + battery)
+ look locksize 24-72       clock size on the lock screen (default 42)
+ look preview              draw a sample of every colour    look reset   back to defaults
+ Setup prompts use TermOS-styled dialogs (not system Material).
+ Roles: user = the user@termos part, input = what you type, output = normal text, error,
+        dim = tips, banner = start text, time = date/time lines.
+ The date and time appear under the banner when the terminal starts, when it locks
+ (screen off or logout) and at login, together with your last login.""",
 
         "pipes" to """Pipes, chaining, aliases, history
  ls | grep chrome | head 3      filters: grep [-i] [-v], head [n], tail [n], wc [-l], sort [-r], uniq

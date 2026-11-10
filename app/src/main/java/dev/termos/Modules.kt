@@ -106,6 +106,7 @@ object Modules {
             "tsh" -> tsh(arg, env)
             "at", "every" -> addJob(cmd, arg, env)
             "job" -> job(arg, env)
+            "look", "banner" -> LookCmd.run(cmd, arg, env)
             "call" -> return call(arg, env)
             else -> return false
         }

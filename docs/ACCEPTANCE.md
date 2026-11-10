@@ -49,3 +49,21 @@ Gemini calls with a real key; screen-off auto-lock on a physical device.
 | NF-08 | First open (setup prompts on): dialogs appear for default launcher, lock, battery, notifications, alarms, overlay; "Never ask" and "Later" are respected | manual |
 | NF-09 | With overlay allowed, pressing the power button then waking shows TermOS's password prompt | manual |
 | NF-10 | With keep-alive and battery exemption on, a 10-minute timer still fires after the app is swiped away | manual |
+
+## 0.5.0 additions
+
+| ID | Criterion | Verified by |
+|----|-----------|-------------|
+| NF-11 | Opening TermOS shows the next missing setup dialog; "Later" and tap-outside snooze it 1 hour | SetupPolicyTest + manual |
+| NF-12 | `ai key` secrets never appear in history or the echoed prompt | RedactTest |
+
+## 0.6.0 additions
+
+| ID | Criterion | Verified by |
+|----|-----------|-------------|
+| AC-28 | `look` shows title, banner, date format, autofocus and the colour table | LookTest.ac28 |
+| AC-29 | `banner <words>` draws block letters with the chosen fill | ac29, StyleTest |
+| AC-30 | An invalid colour is rejected | ac30, StyleTest |
+| AC-31 | `logout` locks and prints "logged out: <date time>" under the banner | ac31 |
+| NF-13 | Opening the app puts the cursor in the terminal and raises the keyboard (autofocus on) | manual |
+| NF-14 | Colours/styles for user, input, output, error, dim, banner, time apply to the screen immediately | manual |

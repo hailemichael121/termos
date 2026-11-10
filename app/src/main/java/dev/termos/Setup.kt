@@ -11,7 +11,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 
 object Setup {
@@ -19,8 +18,8 @@ object Setup {
         HOME("home", "Default launcher",
             "Make TermOS your home screen so the Home button opens the terminal.", "Choose", "Never ask"),
         LOCK("lock", "Screen lock",
-            "Android's own lock screen is on, so you unlock twice. Set Screen lock to None (or Swipe) and TermOS's password becomes your only lock.",
-            "Open settings", "Keep both locks"),
+            "Android's own lock screen is on, so you unlock twice. Open Screen lock and set None (or Swipe). TermOS's password becomes your only lock.",
+            "Open Screen lock", "Keep both locks"),
         BATTERY("battery", "Unrestricted battery",
             "Stops the system from killing TermOS, so timers, scheduled jobs and the auto-lock keep working.", "Allow", "Never ask"),
         NOTIF("notifications", "Notifications",
@@ -70,16 +69,9 @@ object Setup {
         val pkg = Uri.parse("package:${c.packageName}")
         return try {
             when (id) {
-                Id.HOME -> {
-                    try { go(c, Intent(Settings.ACTION_HOME_SETTINGS)) }
-                    catch (e: Exception) { go(c, Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)) }
-                    "pick TermOS as the Home app."
-                }
-                Id.LOCK -> { go(c, Intent(Settings.ACTION_SECURITY_SETTINGS)); "set Screen lock to None (or Swipe)." }
-                Id.BATTERY -> {
-                    go(c, Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, pkg))
-                    "choose Allow.\n" + Oem.tip(Build.MANUFACTURER)
-                }
+                Id.HOME -> SettingsNav.openHomeSettings(c)
+                Id.LOCK -> SettingsNav.openLockScreen(c)
+                Id.BATTERY -> SettingsNav.openBatteryExemption(c)
                 Id.NOTIF -> {
                     go(c, Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, c.packageName))
                     "turn notifications on for TermOS."
@@ -106,10 +98,9 @@ object KeepAlive {
     fun stop(c: Context) { try { c.stopService(Intent(c, KeepAliveService::class.java)) } catch (e: Exception) { } }
 }
 
-/** Shows the setup dialogs on open. Holds the Activity only as long as the Activity lives; dialog is dismissed in onStop. */
+/** Shows setup dialogs on open (custom TermOS UI, not system Material). */
 class SetupPrompter(private val act: Activity) {
-    private var dialog: AlertDialog? = null
-    private val day = 24L * 3600 * 1000
+    private val dialog = TermDialog(act)
 
     private fun allowed(m: Shell.Mode) = m == Shell.Mode.NORMAL || m == Shell.Mode.LOGIN || m == Shell.Mode.SET1
     private fun off() = Store.get(act, "setup_prompts") == "off"
@@ -120,13 +111,13 @@ class SetupPrompter(private val act: Activity) {
         maybePrompt(m)
     }
 
-    fun dismiss() { dialog?.dismiss(); dialog = null }
+    fun dismiss() { dialog.dismiss() }
 
     fun maybePrompt(m: Shell.Mode) {
-        if (off() || !allowed(m) || act.isFinishing || dialog?.isShowing == true) return
+        if (off() || !allowed(m) || act.isFinishing || dialog.isShowing()) return
         val now = System.currentTimeMillis()
         val id = Setup.startup.firstOrNull {
-            Setup.pending(act, it) && now - (Store.get(act, "asked.${it.key}")?.toLongOrNull() ?: 0L) > day
+            Setup.pending(act, it) && SetupPolicy.due(now, Store.get(act, "asked.${it.key}")?.toLongOrNull())
         } ?: return
         show(id)
     }
@@ -135,16 +126,17 @@ class SetupPrompter(private val act: Activity) {
 
     private fun show(id: Setup.Id) {
         val extra = if (id == Setup.Id.BATTERY) "\n\n" + Oem.tip(Build.MANUFACTURER) else ""
-        val d = AlertDialog.Builder(act)
-            .setTitle(id.title)
-            .setMessage(id.why + extra)
-            .setPositiveButton(id.action) { _, _ -> mark(id); fix(id) }
-            .setNegativeButton("Later") { _, _ -> mark(id) }
-            .setNeutralButton(id.neutral) { _, _ -> Store.put(act, "skip.${id.key}", "1") }
-            .create()
-        d.setOnDismissListener { if (dialog === d) dialog = null }
-        dialog = d
-        d.show()
+        dialog.show(
+            title = id.title,
+            message = id.why + extra,
+            positive = id.action,
+            negative = "Later",
+            neutral = id.neutral,
+            onPositive = { mark(id); fix(id) },
+            onNegative = { mark(id) },
+            onNeutral = { Store.put(act, "skip.${id.key}", "1") },
+            onCancel = { mark(id) }
+        )
     }
 
     private fun fix(id: Setup.Id) {

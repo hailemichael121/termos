@@ -77,7 +77,7 @@ object Parser {
     }
 
     /** Hide secrets before echoing or storing a line. */
-    fun redact(line: String): String = line.replace(Regex("(?i)(ai\\s+key\\s+)\\S+"), "$1***")
+    fun redact(line: String): String = line.replace(Regex("(?i)\\bai\\s+key\\s+\\S+"), "ai key ***")
 }
 
 /** Tiny text filters usable after '|'. */
@@ -262,13 +262,18 @@ object Lockout {
 enum class Kind { PROMPT, ERROR, DIM, NORMAL }
 
 object LineStyle {
-    private val prompt = Regex("^\\S+@termos:\\S*[#$] ")
+    private val prompt = Regex(
+        "^(\\S+@termos:\\S*[#$] |password: |new password: |confirm password: |\\[sudo\\] password: )"
+    )
     private val err = Regex("(?i)(denied|error|not found|incorrect|unknown|usage:|failed|invalid|mismatch|too many)")
 
     fun classify(l: String): Kind = when {
         prompt.containsMatchIn(l) -> Kind.PROMPT
         err.containsMatchIn(l) -> Kind.ERROR
-        l.startsWith("tip:") || l.startsWith("(") -> Kind.DIM
+        l.startsWith("tip:") || l.startsWith("visual:") || l.startsWith("start here:") || l.startsWith("(") -> Kind.DIM
+        l.matches(Regex("^\\[.+\\]$")) -> Kind.DIM
+        l.startsWith("──") || l.startsWith("────") -> Kind.DIM
+        l.contains("aka:") || l.contains("use:") -> Kind.DIM
         else -> Kind.NORMAL
     }
 }
@@ -297,7 +302,9 @@ interface CompletionSource {
 
 object Completer {
     val subs: Map<String, List<String>> = mapOf(
-        "config" to listOf("theme", "vim", "font", "autolock", "username"),
+        "look" to listOf("color", "style", "title", "banner", "fill", "sub", "date", "preview", "reset", "autofocus", "lock", "locksize"),
+        "banner" to listOf("default", "off", "plain"),
+        "config" to listOf("theme", "vim", "font", "autolock", "autofocus", "keyboard", "username"),
         "linux" to listOf("ubuntu", "shell", "setup", "run", "exec", "guide"),
         "ai" to listOf("do", "key", "model"),
         "vim" to listOf("on", "off"),

@@ -9,4 +9,8 @@ object Config {
     fun autolock(c: Context) = Store.get(c, "autolock") != "off"
     fun user(c: Context) = Store.get(c, "user") ?: "user"
     fun keepalive(c: Context) = Store.get(c, "keepalive") != "off"
+    fun autofocus(c: Context) = Store.get(c, "autofocus") != "off"
+    /** `term` = in-app keyboard (default); `system` = Android IME */
+    fun keyboard(c: Context) = Store.get(c, "keyboard")?.lowercase() ?: "term"
+    fun keyboardCollapsed(c: Context) = Store.get(c, "keyboard.collapsed") == "1"
 }

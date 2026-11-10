@@ -92,23 +92,41 @@ class Shell(
         }
     }
 
+    private fun header(event: String?) {
+        Look.header(ctx).forEach { emit(it) }
+        emit(Look.stampLine(ctx, event))
+        if (event == null) {
+            val last = Store.get(ctx, "last_active")?.toLongOrNull()
+            if (last != null) emit(Look.marked(Banner.TMARK, "last session closed: " + Look.stamp(ctx, last)))
+        }
+    }
+
+    private fun loginStamp() {
+        val now = System.currentTimeMillis()
+        val last = Store.get(ctx, "last_login")?.toLongOrNull()
+        emit(Look.marked(Banner.TMARK, "login: " + Look.stamp(ctx, now)))
+        if (last != null) emit(Look.marked(Banner.TMARK, "last login: " + Look.stamp(ctx, last)))
+        Store.put(ctx, "last_login", now.toString())
+    }
+
     fun start() {
-        emit(BANNER)
+        header(null)
         if (mode == Mode.SET1) emit("first boot: create a password (6+ characters). it unlocks the terminal and authorises sudo.")
         else emit("terminal locked.")
     }
 
-    fun lock() {
+    fun lock(reason: String = "logged out") {
         mode = Mode.LOGIN
         root = false; sudoUntil = 0; pending = null; pendingPlan = null
         Modules.cancel()
         clearScreen()
+        header(reason)
         emit("terminal locked.")
         onState()
     }
 
     fun onScreenOff() {
-        if (Config.autolock(ctx) && mode != Mode.LOGIN && mode != Mode.SET1 && mode != Mode.SET2) lock()
+        if (Config.autolock(ctx) && mode != Mode.LOGIN && mode != Mode.SET1 && mode != Mode.SET2) lock("screen off")
     }
 
     /** ^C */
@@ -153,7 +171,7 @@ class Shell(
             Mode.LOGIN -> {
                 val wait = lockWait()
                 if (wait > 0) emit("too many attempts. wait ${wait}s.")
-                else if (Auth.check(ctx, raw)) { resetFails(); mode = Mode.NORMAL; emit("access granted."); motd(); tip(); Session.flushHeld() }
+                else if (Auth.check(ctx, raw)) { resetFails(); mode = Mode.NORMAL; emit("access granted."); loginStamp(); motd(); tip(); Session.flushHeld() }
                 else { fail(); emit("access denied. attempts: ${fails()}") }
             }
             Mode.SUDO -> {
@@ -230,7 +248,7 @@ class Shell(
     private fun openTodos(): Int =
         file("todo.txt").takeIf { it.exists() }?.readLines()?.count { it.startsWith("[ ]") } ?: 0
 
-    private fun motd() = emit("battery ${batteryPct()}%  |  ${openTodos()} open todo(s)  |  ${timers.size} timer(s)  |  type 'help'")
+    private fun motd() = emit("battery ${batteryPct()}%  |  ${openTodos()} open todo(s)  |  ${timers.size} timer(s)  |  help  |  look = visuals")
 
     // ------------------------------------------------------------ history/alias
     private fun loadHistory() {
@@ -399,22 +417,10 @@ class Shell(
 
     // ------------------------------------------------------------------ help
     private fun help(arg: String) {
-        if (arg.isEmpty()) {
-            val sb = StringBuilder("TermOS $VERSION commands (* = needs sudo)\n")
-            Cat.values().forEach { cat ->
-                val l = Registry.all.filter { it.cat == cat }
-                if (l.isNotEmpty()) {
-                    sb.append("\n[${cat.label}]\n")
-                    l.forEach { sb.append("  %-10s %s%s\n".format(it.name, it.desc, if (it.root) " *" else "")) }
-                }
-            }
-            sb.append("\nhelp <cmd> | guide <page> | cmds | TAB completes | ^C cancels | pipes: guide pipes")
-            out(sb.toString().trimEnd())
-        } else {
-            val c = Registry.find(arg) ?: run { out("no help for '$arg'"); return }
-            val al = if (c.aliases.isEmpty()) "" else "\naliases: " + c.aliases.joinToString(", ")
-            val ex = if (c.example.isEmpty()) "" else "\nexample: ${c.example}"
-            out("${c.name}\nusage  : ${c.usage}\n${c.desc}${if (c.root) "\nneeds sudo" else ""}$al$ex")
+        if (arg.isEmpty()) out(HelpFmt.overview(VERSION, Registry.all))
+        else {
+            val c = Registry.find(arg) ?: run { out("no help for '$arg'. try: help  or  help ls"); return }
+            out(HelpFmt.one(c))
         }
     }
 
@@ -435,8 +441,7 @@ class Shell(
     }
 
     private fun cmds() {
-        out(Registry.all.joinToString("\n") { "%-10s %-17s %s".format(it.name, avail(it), it.usage.take(44)) } +
-            "\n\nready = works now | sudo = ask password | needs ... = see 'guide'")
+        out(HelpFmt.cmdsTable(Registry.all) { avail(it) })
     }
 
     private fun which(arg: String) {
@@ -477,7 +482,9 @@ class Shell(
             "" -> out(
                 "theme    : ${Config.theme(ctx)}\nvim      : ${if (Config.vim(ctx)) "on" else "off"}\n" +
                     "font     : ${Config.font(ctx)}\nautolock : ${if (Config.autolock(ctx)) "on" else "off"}\n" +
-                    "username : ${Config.user(ctx)}\n\nconfig theme <name> | vim on|off | font <8-30> | autolock on|off | username <name>"
+                    "username : ${Config.user(ctx)}\nautofocus: ${if (Config.autofocus(ctx)) "on" else "off"}\n" +
+                    "keyboard : ${Config.keyboard(ctx)}\n\n" +
+                    "config theme <name> | vim on|off | font <8-30> | autolock on|off | autofocus on|off | keyboard term|system | username <name>   (more: look)"
             )
             "theme" -> when {
                 v.isEmpty() -> out("themes: ${Themes.names().joinToString(", ")}\ncurrent: ${Config.theme(ctx)}")
@@ -492,6 +499,15 @@ class Shell(
                 val n = v.toIntOrNull()
                 if (n == null || n !in 8..30) out("usage: config font <8-30>") else { Store.put(ctx, "font", n.toString()); out("font -> $n") }
             }
+            "autofocus" -> if (v == "on" || v == "off") { Store.put(ctx, "autofocus", v); out("autofocus $v") } else out("usage: config autofocus on|off")
+            "keyboard" -> when (v) {
+                "term", "system" -> {
+                    Store.put(ctx, "keyboard", "term")
+                    Store.put(ctx, "keyboard.collapsed", "")
+                    out("keyboard -> term (built-in only; system IME is disabled)")
+                }
+                else -> out("usage: config keyboard term   (in-app keyboard only; system keyboard is never shown)")
+            }
             "autolock" -> when {
                 v != "on" && v != "off" -> out("usage: config autolock on|off")
                 v == "off" && !isRoot -> out("permission denied. try: sudo config autolock off")
@@ -505,8 +521,8 @@ class Shell(
 
     private fun lockscreen() {
         if (androidLockOn()) {
-            out("Android screen lock: ON (a second lock before TermOS).\nTo make TermOS your only lock: Security -> Screen lock -> None (or Swipe).\nopening Security settings... (see: guide lock)")
-            sys(Settings.ACTION_SECURITY_SETTINGS)
+            val hint = SettingsNav.openLockScreen(ctx)
+            out("Android screen lock: ON (a second lock before TermOS).\n$hint\n(see: guide lock)")
         } else out("Android screen lock: OFF. TermOS password is your only lock.\n(autolock on screen-off: ${if (Config.autolock(ctx)) "on" else "off"})")
     }
 

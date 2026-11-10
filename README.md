@@ -3,6 +3,11 @@
 Terminal-style Android launcher: apps, text browser, Gemini assistant, clipboard,
 notes, password lock + sudo, all from a command line.
 
+**Handoff for another machine or assistant:** [`docs/ONBOARDING.md`](docs/ONBOARDING.md) (vision, scripts, 0.3–0.7 history, paste-block).
+
+## Project site
+Static about page (liquid-glass layout, Fidel-style): open `site/index.html` in a browser or serve the `site/` folder.
+
 ## Run
 ./build.sh        # build debug APK
 ./install.sh      # build + adb install + try set as home

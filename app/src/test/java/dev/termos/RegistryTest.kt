@@ -37,12 +37,13 @@ class RegistryTest {
     @Test fun requiredCommandsExist() {
         listOf("help", "guide", "cmds", "which", "setup", "theme", "config", "vim", "linux", "lockscreen", "ai", "browse",
             "lock", "sudo", "calc", "timer", "todo", "torch", "alias", "unalias", "df", "free",
-            "perms", "keepalive", "notify", "notifs", "contacts", "sms", "script", "tsh", "at", "every", "job")
+            "perms", "keepalive", "notify", "notifs", "contacts", "sms", "script", "tsh", "at", "every", "job",
+            "look", "banner", "logout")
             .forEach { assertNotNull("missing $it", Registry.find(it)) }
     }
 
     @Test fun guidePagesExist() {
-        listOf("start", "setup", "lock", "linux", "vim", "themes", "ai", "pipes", "tools", "comms", "scripts").forEach {
+        listOf("start", "setup", "lock", "linux", "vim", "themes", "look", "ai", "pipes", "tools", "comms", "scripts").forEach {
             assertTrue("guide $it", Guide.page(it).length > 40)
         }
         assertTrue(Guide.page("scripts").contains("\$BATTERY"))
@@ -55,5 +56,5 @@ class RegistryTest {
             .forEach { assertFalse("$it must not be plannable", Plan.allowed(it)) }
     }
 
-    @Test fun versionIsCurrent() = assertEquals("0.4.0", VERSION)
+    @Test fun versionIsCurrent() = assertEquals("0.8.0", VERSION)
 }

@@ -31,6 +31,8 @@
     <application
         android:name=".TermApp"
         android:allowBackup="false"
+        android:icon="@drawable/ic_emblem"
+        android:roundIcon="@drawable/ic_emblem"
         android:label="TermOS"
         android:theme="@style/Theme.TermOS"
         android:usesCleartextTraffic="true">

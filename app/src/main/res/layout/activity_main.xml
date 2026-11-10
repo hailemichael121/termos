@@ -1,89 +1,201 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/root"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootFrame"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
-    android:fitsSystemWindows="true"
-    android:orientation="vertical">
+    android:fitsSystemWindows="true">
 
-    <TextView
-        android:id="@+id/status"
+    <LinearLayout
+        android:id="@+id/root"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:paddingStart="8dp"
-        android:paddingTop="2dp"
-        android:paddingEnd="8dp"
-        android:paddingBottom="2dp"
-        android:singleLine="true"
-        android:textSize="11sp"
-        android:typeface="monospace" />
-
-    <ScrollView
-        android:id="@+id/scroll"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:padding="8dp">
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:orientation="vertical">
 
         <TextView
-            android:id="@+id/screen"
+            android:id="@+id/status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textIsSelectable="true"
+            android:ellipsize="end"
+            android:paddingStart="8dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="2dp"
+            android:singleLine="true"
+            android:textSize="11sp"
             android:typeface="monospace" />
-    </ScrollView>
+
+        <ScrollView
+            android:id="@+id/scroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/screen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textIsSelectable="true"
+                android:typeface="monospace" />
+        </ScrollView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <TextView
+                android:id="@+id/prompt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:typeface="monospace" />
+
+            <EditText
+                android:id="@+id/input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:autofillHints="none"
+                android:background="@null"
+                android:hint="@null"
+                android:imeOptions="actionDone|flagNoFullscreen"
+                android:importantForAutofill="no"
+                android:inputType="textNoSuggestions"
+                android:privateImeOptions="nm"
+                android:typeface="monospace" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/inputToolBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnEsc"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:minHeight="0dp"
+                android:text="ESC"
+                android:textSize="12sp" />
+            <Button
+                android:id="@+id/btnUp"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:minHeight="0dp"
+                android:text="↑"
+                android:textSize="14sp" />
+            <Button
+                android:id="@+id/btnDown"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:minHeight="0dp"
+                android:text="↓"
+                android:textSize="14sp" />
+            <Button
+                android:id="@+id/btnTab"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:minHeight="0dp"
+                android:text="TAB"
+                android:textSize="12sp" />
+            <Button
+                android:id="@+id/btnCtrlC"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:minHeight="0dp"
+                android:text="^C"
+                android:textSize="12sp" />
+            <Button
+                android:id="@+id/btnPipe"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:minHeight="0dp"
+                android:text="|"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/keyboardPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="2dp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/keyboardFab"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="Open TermOS keyboard"
+        android:text="⌨"
+        android:textSize="26sp"
+        android:typeface="monospace"
+        android:visibility="gone" />
 
     <LinearLayout
+        android:id="@+id/lockHud"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp">
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/lockEmblem"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:contentDescription="TermOS emblem"
+            android:src="@drawable/ic_emblem" />
 
         <TextView
-            android:id="@+id/prompt"
+            android:id="@+id/lockClock"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:textSize="42sp"
             android:typeface="monospace" />
 
-        <EditText
-            android:id="@+id/input"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/lockBattery"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:autofillHints="none"
-            android:background="@null"
-            android:hint="@null"
-            android:imeOptions="actionSend"
-            android:importantForAutofill="no"
-            android:inputType="text"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:textSize="18sp"
             android:typeface="monospace" />
-    </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Button android:id="@+id/btnEsc" style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-            android:minHeight="0dp" android:text="ESC" android:textSize="12sp" />
-        <Button android:id="@+id/btnUp" style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-            android:minHeight="0dp" android:text="↑" android:textSize="14sp" />
-        <Button android:id="@+id/btnDown" style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-            android:minHeight="0dp" android:text="↓" android:textSize="14sp" />
-        <Button android:id="@+id/btnTab" style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-            android:minHeight="0dp" android:text="TAB" android:textSize="12sp" />
-        <Button android:id="@+id/btnCtrlC" style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-            android:minHeight="0dp" android:text="^C" android:textSize="12sp" />
-        <Button android:id="@+id/btnPipe" style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-            android:minHeight="0dp" android:text="|" android:textSize="14sp" />
+        <TextView
+            android:id="@+id/lockSub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:alpha="0.85"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:typeface="monospace"
+            android:visibility="gone" />
     </LinearLayout>
-</LinearLayout>
+</FrameLayout>

@@ -1,5 +1,6 @@
 package dev.termos
 
+import androidx.test.espresso.Espresso.onView
 import org.junit.Test
 
 /** Acceptance criteria AC-01 .. AC-16, see docs/ACCEPTANCE.md */
