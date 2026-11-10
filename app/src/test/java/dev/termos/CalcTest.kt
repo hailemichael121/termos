@@ -31,7 +31,7 @@ class CalcTest {
 
     @Test fun errors() {
         listOf("2+", "(1", "1/0", "foo(1)", "abc", "2 $ 3").forEach {
-            try { e(it); fail("expected error for '$it'") } catch (_: Exception) {}
+            try { e(it); fail("expected error for '$it'") } catch (e: Exception) {}
         }
     }
 

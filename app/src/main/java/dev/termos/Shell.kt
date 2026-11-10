@@ -85,6 +85,7 @@ class Shell(
             else -> "Gemini API key (Enter=skip)> "
         }
         Mode.NORMAL -> when {
+            Modules.promptOverride() != null -> Modules.promptOverride()!!
             pendingPlan != null -> "run plan? [y/N] "
             root -> "root@termos:~# "
             else -> "${Config.user(ctx)}@termos:~$ "
@@ -100,6 +101,7 @@ class Shell(
     fun lock() {
         mode = Mode.LOGIN
         root = false; sudoUntil = 0; pending = null; pendingPlan = null
+        Modules.cancel()
         clearScreen()
         emit("terminal locked.")
         onState()
@@ -111,6 +113,7 @@ class Shell(
 
     /** ^C */
     fun interrupt() {
+        Modules.cancel()
         when {
             mode == Mode.SUDO -> { pending = null; mode = Mode.NORMAL }
             mode == Mode.WIZ -> { mode = Mode.NORMAL; emit("setup skipped. run 'setup' anytime.") }
@@ -125,6 +128,7 @@ class Shell(
     private val source = object : CompletionSource {
         override fun apps(): List<String> = this@Shell.apps.all().map { it.label }
         override fun aliases(): Collection<String> = this@Shell.aliases.keys
+        override fun scripts(): List<String> = Scripts.list(ctx)
     }
 
     fun complete(text: String): List<String> =
@@ -149,7 +153,7 @@ class Shell(
             Mode.LOGIN -> {
                 val wait = lockWait()
                 if (wait > 0) emit("too many attempts. wait ${wait}s.")
-                else if (Auth.check(ctx, raw)) { resetFails(); mode = Mode.NORMAL; emit("access granted."); motd(); tip() }
+                else if (Auth.check(ctx, raw)) { resetFails(); mode = Mode.NORMAL; emit("access granted."); motd(); tip(); Session.flushHeld() }
                 else { fail(); emit("access denied. attempts: ${fails()}") }
             }
             Mode.SUDO -> {
@@ -174,12 +178,14 @@ class Shell(
     private fun lockWait() = Lockout.remaining(fails(), lastFail(), now())
 
     private fun normal(raw: String) {
+        if (Modules.intercept(raw, env())) return
         val line = raw.trim()
         pendingPlan?.let { plan ->
             pendingPlan = null
             when (line.lowercase()) {
                 "y", "yes" -> { plan.forEach { emit(">> $it"); execute(it, false) }; return }
                 "n", "no", "" -> { emit("plan cancelled."); return }
+                else -> {}
             }
         }
         if (line.isEmpty()) return
@@ -269,10 +275,11 @@ class Shell(
                 return
             }
         }
-        val sink: (String) -> Unit = if (filters.isEmpty()) emit else { text ->
+        val base = out
+        val sink: (String) -> Unit = if (filters.isEmpty()) base else { text ->
             var t = text
             for (f in filters) { val tk = Parser.tokens(f); t = Filters.apply(tk[0], tk.drop(1), t) }
-            if (t.isNotEmpty()) emit(t)
+            if (t.isNotEmpty()) base(t)
         }
         val prev = out
         out = sink
@@ -323,11 +330,11 @@ class Shell(
             "bt" -> sys(Settings.ACTION_BLUETOOTH_SETTINGS)
             "copy" -> copy(Parser.words(arg))
             "paste" -> paste()
-            "call" -> call(arg)
+            "call" -> if (!Modules.dispatch("call", arg, env())) call(arg)
             "note" -> note(Parser.words(arg))
             "notes" -> notes(arg)
             "calc" -> calc(arg)
-            "timer" -> timer(arg)
+            "timer" -> Modules.dispatch("timer", arg, env())
             "todo" -> todo(arg)
             "torch" -> torch(arg)
             "browse" -> browse(arg)
@@ -341,10 +348,48 @@ class Shell(
             "theme" -> config("theme $arg", isRoot)
             "vim" -> config("vim $arg", isRoot)
             else -> {
+                if (def != null && Modules.dispatch(cmd, arg, env())) return
                 val s = Suggest.closest(rawCmd, Registry.names() + aliases.keys)
                 out("$rawCmd: command not found." + (if (s != null) " did you mean '$s'?" else "") + "  (try: help)")
             }
         }
+    }
+
+    private var headless = false
+
+    private fun env(): ModEnv = ModEnv(
+        ctx, scope, { s -> out(s) }, emit, root, headless,
+        { l -> execCapture(l) },
+        { p -> val r = permRequester; if (r != null) { r(p); true } else false }
+    )
+
+    private val asyncCmds = setOf("browse", "go", "back", "ai", "linux")
+
+    /** Run a line and capture its output; ok = no error-looking line. Async commands print normally. */
+    fun execCapture(line: String, elevated: Boolean = false): Pair<Boolean, String> {
+        val first = Registry.find(Parser.tokens(line).firstOrNull() ?: "")?.name
+        if (first != null && first in asyncCmds) { execute(line, elevated); return true to "" }
+        val sb = StringBuilder()
+        val prev = out
+        out = { s -> if (sb.isNotEmpty()) sb.append('\n'); sb.append(s) }
+        try {
+            for (stmt in Parser.statements(line)) pipeline(Parser.expandAlias(stmt, aliases), elevated)
+        } finally { out = prev }
+        val text = sb.toString()
+        return text.lines().none { LineStyle.classify(it) == Kind.ERROR } to text
+    }
+
+    /** Scheduled jobs: only Headless.allowed commands, output held while locked. */
+    fun runHeadless(line: String) {
+        headless = true
+        try {
+            for (stmt in Parser.statements(line)) {
+                val first = Parser.tokens(stmt).firstOrNull() ?: continue
+                if (!Headless.ok(first)) { Session.background("job: '$first' is not allowed in background jobs"); continue }
+                val text = execCapture(stmt).second
+                if (text.isNotEmpty()) Session.background(text)
+            }
+        } finally { headless = false }
     }
 
     private fun sudo(arg: String) {
@@ -381,6 +426,10 @@ class Shell(
             else -> "ready"
         }
         "torch" -> if (ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) "ready" else "no flash"
+        "notifs" -> if (Notifs.enabled(ctx)) "ready" else "needs access"
+        "contacts" -> if (Comms.has(ctx, Comms.P_CONTACTS)) "ready" else "needs permission"
+        "sms" -> if (Comms.has(ctx, Comms.P_READ_SMS) && Comms.has(ctx, Comms.P_SEND_SMS)) "ready" else "needs permission"
+        "perms" -> if (Setup.startup.all { Setup.ok(ctx, it) }) "all set" else "items missing"
         "lockscreen" -> if (androidLockOn()) "android lock ON" else "ready (lock off)"
         else -> if (c.root) "sudo" else "ready"
     }
@@ -603,7 +652,7 @@ class Shell(
         try {
             (ctx.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
                 .vibrate(VibrationEffect.createOneShot(400, VibrationEffect.DEFAULT_AMPLITUDE))
-        } catch (_: Exception) {}
+        } catch (e: Exception) {}
     }
 
     private fun todo(arg: String) {

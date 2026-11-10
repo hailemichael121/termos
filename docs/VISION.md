@@ -64,3 +64,9 @@ so it is JVM-unit-tested; Android code is thin; the Registry drives help, comple
 - Play Store policy for launchers using QUERY_ALL_PACKAGES / Accessibility (use the `<queries>` form now; justify accessibility per policy).
 - OEM battery killers can kill the process: timers and screen-off lock rely on the process being alive (a foreground service is a later option).
 - Termux's RUN_COMMAND needs the user to enable `allow-external-apps`; keep the guided setup short.
+
+## Status update: 0.4.0
+Shipped: setup prompts (default launcher, lock mode, battery, notifications, alarms, overlay), keep-alive service,
+alarm-based timers, boot re-arming, notifications/contacts/SMS commands, scripting (.tsh) and scheduling (at/every/job).
+Still open: Keystore-backed AI key, Accessibility cross-app actions, files (SAF), Amharic UI, store policy review for SMS.
+Design rule kept: anything that runs unattended (jobs) is limited to a small allow-list of background-safe commands.

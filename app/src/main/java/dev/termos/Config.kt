@@ -8,4 +8,5 @@ object Config {
     fun font(c: Context) = Store.get(c, "font")?.toIntOrNull() ?: 13
     fun autolock(c: Context) = Store.get(c, "autolock") != "off"
     fun user(c: Context) = Store.get(c, "user") ?: "user"
+    fun keepalive(c: Context) = Store.get(c, "keepalive") != "off"
 }

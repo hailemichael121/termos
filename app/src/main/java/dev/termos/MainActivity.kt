@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var input: EditText
     private lateinit var buttons: List<Button>
     private val shell: Shell get() = Session.shell
+    private lateinit var prompter: SetupPrompter
 
     private var vimNormal = false
     private var searching = false
@@ -56,6 +57,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        prompter = SetupPrompter(this)
         root = findViewById(R.id.root)
         status = findViewById(R.id.status)
         screen = findViewById(R.id.screen)
@@ -107,12 +109,12 @@ class MainActivity : AppCompatActivity() {
         Session.sink = { appendText(it) }
         Session.clearListener = { screen.text = "" }
         Session.stateListener = { refresh() }
-        shell.permRequester = { requestPermissions(arrayOf(it), 11) }
+        shell.permRequester = { requestPermissions(it.split(',').toTypedArray(), 11) }
         renderedTheme = ""
         refresh()
     }
 
-    override fun onStop() { detach(); super.onStop() }
+    override fun onStop() { prompter.dismiss(); detach(); super.onStop() }
     override fun onDestroy() { detach(); super.onDestroy() }
 
     private fun detach() {
@@ -120,7 +122,7 @@ class MainActivity : AppCompatActivity() {
         shell.permRequester = null
     }
 
-    override fun onResume() { super.onResume(); input.requestFocus() }
+    override fun onResume() { super.onResume(); input.requestFocus(); prompter.onResume(shell.mode) }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); input.requestFocus() }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -283,6 +285,7 @@ class MainActivity : AppCompatActivity() {
         val type = if (shell.secret) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
                    else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         if (input.inputType != type) input.inputType = type
+        prompter.maybePrompt(shell.mode)
         if (!vimNormal) scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
     }
 }

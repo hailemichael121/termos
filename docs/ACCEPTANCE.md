@@ -28,3 +28,24 @@ Run on a device/emulator: `./e2e.sh` (or `./e2e.sh --emulator`). Unit-level logi
 
 Manual checks (not automatable here): becoming the default Home app; Termux `linux` flow on a real phone;
 Gemini calls with a real key; screen-off auto-lock on a physical device.
+
+## 0.4.0 additions
+
+| ID | Criterion | Verified by |
+|----|-----------|-------------|
+| AC-17 | `perms` lists home, lock, battery, notifications, alarms, overlay, notifs, contacts, sms | AutomationTest.ac17 |
+| AC-18 | Timers are alarm-based, listed with time left, and can be cancelled | ac18 |
+| AC-19 | `at`/`every`/`job` schedule, list and remove jobs; only background-safe commands are accepted | ac19, ScheduleTest |
+| AC-20 | Scripts: create with the line editor, variables, if/else, repeat, run with `tsh` | ac20, ScriptTest |
+| AC-21 | Scripts cannot nest or use sudo/su/passwd | ac21 |
+| AC-22 | `keepalive on/off` toggles the foreground service | ac22 |
+| AC-23 | `notify` posts a notification (or explains permission is off) | ac23 |
+| AC-24 | `notifs watch` toggles echoing without special access | ac24 |
+| AC-25 | `contacts <filter>` reports no match cleanly | CommsTest.ac25 |
+| AC-26 | `sms send` always asks y/n unless `-y`; `n` cancels | ac26 |
+| AC-27 | `sms read <n>` refuses a missing message | ac27 |
+| NF-06 | Notifications/timer/job text produced while locked is held and shown only after unlock | manual |
+| NF-07 | After a reboot, scheduled jobs and pending timers are re-armed | manual (reboot the phone) |
+| NF-08 | First open (setup prompts on): dialogs appear for default launcher, lock, battery, notifications, alarms, overlay; "Never ask" and "Later" are respected | manual |
+| NF-09 | With overlay allowed, pressing the power button then waking shows TermOS's password prompt | manual |
+| NF-10 | With keep-alive and battery exemption on, a 10-minute timer still fires after the app is swiped away | manual |

@@ -275,7 +275,8 @@ object LineStyle {
 
 /** Safety filter for AI-proposed command plans. */
 object Plan {
-    val forbidden = setOf("sudo", "su", "passwd", "exit", "ai", "linux", "uninstall", "settings", "lock")
+    val forbidden = setOf("sudo", "su", "passwd", "exit", "ai", "linux", "uninstall", "settings", "lock",
+        "sms", "script", "tsh", "at", "every", "job", "notifs", "contacts")
 
     fun allowed(name: String): Boolean {
         val c = Registry.find(name) ?: return false
@@ -291,6 +292,7 @@ object Plan {
 interface CompletionSource {
     fun apps(): List<String>
     fun aliases(): Collection<String>
+    fun scripts(): List<String> = emptyList()
 }
 
 object Completer {
@@ -303,7 +305,13 @@ object Completer {
         "timer" to listOf("cancel"),
         "todo" to listOf("add", "done", "rm", "clear"),
         "notes" to listOf("clear"),
-        "history" to listOf("clear")
+        "history" to listOf("clear"),
+        "script" to listOf("ls", "new", "edit", "show", "add", "rm", "run"),
+        "job" to listOf("ls", "rm", "run"),
+        "notifs" to listOf("ls", "open", "clear", "reply", "watch"),
+        "sms" to listOf("send", "read", "from"),
+        "keepalive" to listOf("on", "off"),
+        "perms" to listOf("all", "home", "lock", "battery", "notifications", "alarms", "overlay", "notifs", "contacts", "sms")
     )
 
     fun complete(text: String, src: CompletionSource): List<String> {
@@ -327,6 +335,7 @@ object Completer {
                 c == "config" && parts.size == 3 && parts[1] == "theme" -> Themes.names().filter { it.startsWith(last) }.map { before + it }
                 c == "theme" && parts.size == 2 -> Themes.names().filter { it.startsWith(last) }.map { before + it }
                 c == "guide" && parts.size == 2 -> Guide.pages.keys.filter { it.startsWith(last) }.map { before + it }
+                c == "tsh" && parts.size == 2 -> src.scripts().filter { it.startsWith(last) }.map { before + it }
                 (c == "help" || c == "which") && parts.size == 2 -> Registry.names().filter { it.startsWith(last) }.map { before + it }
                 parts.size == 2 -> (subs[c] ?: emptyList()).filter { it.startsWith(last) }.map { before + it }
                 else -> emptyList()
