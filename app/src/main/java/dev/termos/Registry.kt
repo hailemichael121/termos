@@ -1,9 +1,9 @@
 package dev.termos
 
-const val VERSION = "0.2.0"
+const val VERSION = "0.3.0"
 
 enum class Cat(val label: String) {
-    APPS("apps"), WEB("web"), AI("ai"), LINUX("linux"), TEXT("clipboard & notes"),
+    APPS("apps"), WEB("web"), AI("ai"), LINUX("linux"), TOOLS("tools"), TEXT("clipboard & notes"),
     SYSTEM("system"), SECURITY("security"), UI("look & feel"), HELP("help")
 }
 
@@ -13,26 +13,35 @@ data class Cmd(
     val desc: String,
     val cat: Cat,
     val root: Boolean = false,
-    val aliases: List<String> = emptyList()
+    val aliases: List<String> = emptyList(),
+    val example: String = ""
 )
 
 object Registry {
     val all = listOf(
-        Cmd("help", "help [command]", "list commands or explain one", Cat.HELP, aliases = listOf("man", "?")),
-        Cmd("guide", "guide [page]", "user guide (start, lock, linux, vim, themes, ai)", Cat.HELP),
+        Cmd("help", "help [command]", "list commands or explain one", Cat.HELP, aliases = listOf("man", "?"), example = "help linux"),
+        Cmd("guide", "guide [page]", "user guide pages", Cat.HELP, example = "guide pipes"),
         Cmd("cmds", "cmds", "command availability / what still needs setup", Cat.HELP),
+        Cmd("which", "which <command>", "builtin, alias or unknown?", Cat.HELP, example = "which ll"),
+        Cmd("setup", "setup", "rerun first-run wizard (theme, vim, AI key)", Cat.UI),
 
-        Cmd("ls", "ls [filter]", "list launchable apps (numbered)", Cat.APPS, aliases = listOf("apps", "grep", "search")),
-        Cmd("open", "open <name|number>", "launch an app", Cat.APPS, aliases = listOf("run")),
+        Cmd("ls", "ls [filter]", "list launchable apps (numbered)", Cat.APPS, aliases = listOf("apps", "search"), example = "ls chrome"),
+        Cmd("open", "open <name|number>", "launch an app", Cat.APPS, aliases = listOf("run"), example = "open maps"),
         Cmd("uninstall", "uninstall <name|number>", "remove an app (system confirms)", Cat.APPS, root = true),
 
-        Cmd("browse", "browse <url | words>", "text browser / DuckDuckGo search", Cat.WEB, aliases = listOf("web")),
+        Cmd("browse", "browse <url | words>", "text browser / DuckDuckGo search", Cat.WEB, aliases = listOf("web"), example = "browse kotlin coroutines"),
         Cmd("go", "go <n>", "follow numbered link", Cat.WEB),
         Cmd("back", "back", "previous page", Cat.WEB),
 
-        Cmd("ai", "ai <question> | ai model <name> | sudo ai key <KEY>", "ask Gemini", Cat.AI),
+        Cmd("ai", "ai <question> | ai do <task> | ai model <name> | sudo ai key <KEY>", "ask Gemini, or let it plan commands", Cat.AI,
+            example = "ai do turn on the torch and show battery"),
 
-        Cmd("linux", "linux [ubuntu|shell|setup|run <cmd>|exec <cmd>|guide]", "real Linux via Termux + proot-distro", Cat.LINUX),
+        Cmd("linux", "linux [ubuntu|shell|setup|run <cmd>|exec <cmd>|guide]", "real Linux via Termux + proot-distro", Cat.LINUX, example = "linux exec uname -a"),
+
+        Cmd("calc", "calc <expression>", "calculator: + - * / % ^ ( ) sqrt abs ln log sin cos tan pi e", Cat.TOOLS, example = "calc (2+3)*4^2"),
+        Cmd("timer", "timer [<dur> [label] | cancel <n>]", "countdown timers (90s, 5m, 1h30m; number = minutes)", Cat.TOOLS, example = "timer 25m pomodoro"),
+        Cmd("todo", "todo [add <text>|done <n>|rm <n>|clear]", "to-do list", Cat.TOOLS, example = "todo add buy injera"),
+        Cmd("torch", "torch on|off", "flashlight", Cat.TOOLS),
 
         Cmd("copy", "copy <text>", "copy text to clipboard", Cat.TEXT),
         Cmd("paste", "paste", "print clipboard", Cat.TEXT),
@@ -43,9 +52,11 @@ object Registry {
         Cmd("neofetch", "neofetch", "device info", Cat.SYSTEM, aliases = listOf("uname")),
         Cmd("date", "date", "current date/time", Cat.SYSTEM),
         Cmd("whoami", "whoami", "current user", Cat.SYSTEM),
-        Cmd("history", "history", "command history", Cat.SYSTEM),
+        Cmd("history", "history [clear]", "command history (!! and !n re-run)", Cat.SYSTEM),
         Cmd("clear", "clear", "clear the screen", Cat.SYSTEM),
         Cmd("echo", "echo <text>", "print text", Cat.SYSTEM),
+        Cmd("df", "df", "storage space", Cat.SYSTEM),
+        Cmd("free", "free", "memory use (device + TermOS)", Cat.SYSTEM),
         Cmd("wifi", "wifi", "open Wi-Fi settings", Cat.SYSTEM),
         Cmd("bt", "bt", "open Bluetooth settings", Cat.SYSTEM),
         Cmd("call", "call <number>", "open dialer with number", Cat.SYSTEM),
@@ -53,75 +64,82 @@ object Registry {
 
         Cmd("lock", "lock", "lock the terminal now", Cat.SECURITY),
         Cmd("lockscreen", "lockscreen", "make TermOS your only lock (Android lock -> None)", Cat.SECURITY),
-        Cmd("sudo", "sudo <command>", "run one command as root (asks password)", Cat.SECURITY),
-        Cmd("su", "su", "root shell until `exit` (asks password)", Cat.SECURITY),
+        Cmd("sudo", "sudo [-k] <command>", "run one command as root (password cached 5 min; -k forgets)", Cat.SECURITY),
+        Cmd("su", "su", "root shell until `exit`", Cat.SECURITY),
         Cmd("exit", "exit", "drop root", Cat.SECURITY),
         Cmd("passwd", "passwd", "change TermOS password", Cat.SECURITY, root = true),
 
+        Cmd("alias", "alias [name='command']", "show or define a shortcut", Cat.UI, example = "alias w='browse weather addis ababa'"),
+        Cmd("unalias", "unalias <name>", "remove a shortcut", Cat.UI),
         Cmd("config", "config [theme|vim|font|autolock|username] <value>", "show/change settings", Cat.UI),
         Cmd("theme", "theme [name]", "list or set colour theme", Cat.UI),
         Cmd("vim", "vim on|off", "toggle vim-style modal navigation", Cat.UI)
     )
 
     fun find(n: String): Cmd? = all.firstOrNull { it.name == n || n in it.aliases }
-
     fun names(): List<String> = all.flatMap { listOf(it.name) + it.aliases }.sorted()
-
     fun complete(prefix: String): List<String> = names().filter { it.startsWith(prefix.lowercase()) }
 }
 
 object Guide {
     val pages: Map<String, String> = linkedMapOf(
         "start" to """TermOS quick start
- 1. First boot: create a password. It unlocks the terminal and is your sudo password.
- 2. Press Home -> choose TermOS -> Always.
- 3. Run: lockscreen   (makes TermOS your only lock, see: guide lock)
- 4. ls, open <app>, browse <words>
- 5. sudo ai key <GEMINI_KEY>, then: ai <question>
- 6. linux guide       (real Ubuntu through Termux)
- 7. theme, vim on, help, cmds, guide <page>""",
+ 1. First boot: create a password (6+ chars). It unlocks the terminal and is your sudo password.
+ 2. A short wizard sets theme, vim mode and your Gemini key (Enter keeps defaults). Rerun: setup
+ 3. Press Home -> TermOS -> Always.
+ 4. Run: lockscreen   (make TermOS your only lock, see: guide lock)
+ 5. ls, open <app>, browse <words>, calc 2+2, todo add ..., timer 5m tea
+ 6. help, cmds, guide <page>   |   TAB completes, ^C cancels, ESC = vim normal mode""",
 
         "lock" to """Locking
- TermOS locks itself when the screen turns off and on 'lock'.
+ TermOS locks on screen-off (even if the UI was closed) and on 'lock'.
+ 3 wrong passwords -> 5s wait, then 15s, 30s, 60s. 'sudo' remembers your password 5 min (sudo -k forgets).
  Android's own lock screen cannot be removed by an app. To walk straight into TermOS:
-   run 'lockscreen' -> Android Security settings -> Screen lock -> None (or Swipe).
- Then TermOS's password is the only lock.
- Limits: notifications, recent-apps and quick settings are still reachable while
- TermOS is locked, and the SIM/Find-My-Device protections are untouched.
- 'config autolock off' needs sudo.""",
+   run 'lockscreen' -> Security -> Screen lock -> None (or Swipe).
+ Limits: notifications, recent apps and quick settings stay reachable while locked;
+ SIM / Find-My-Device protections are untouched. 'config autolock off' needs sudo.""",
 
         "linux" to """Real Linux (Termux + proot-distro)
  One-time setup:
   1. Install Termux from F-Droid (not the old Play Store build). Open it once.
-  2. In Termux run:
-       mkdir -p ~/.termux && echo "allow-external-apps=true" >> ~/.termux/termux.properties
-     then fully close and reopen Termux.
+  2. In Termux run:  mkdir -p ~/.termux && echo "allow-external-apps=true" >> ~/.termux/termux.properties
+     then fully close and reopen Termux.   (or run the project's termux/setup-termux.sh)
   3. Android: allow Termux "Display over other apps".
-  4. In TermOS: linux setup   (installs proot-distro + Ubuntu; allow the permission popup)
+  4. In TermOS: linux setup   (allow the permission popup)
  Daily use:
   linux            Ubuntu shell        linux shell        plain Termux
-  linux run <cmd>  run in Termux       linux exec <cmd>   run inside Ubuntu
- A helper script is in the project: termux/setup-termux.sh""",
+  linux run <cmd>  run in Termux       linux exec <cmd>   run inside Ubuntu""",
 
-        "vim" to """Vim mode  (config vim on  /  vim on)
- INSERT  type commands as usual.        ESC (button or key) -> NORMAL
- NORMAL  j/k scroll a line   d/u half page   gg top   G bottom
-         /text search output   n next   N previous
-         i, a, o or : back to INSERT
- Up/Down buttons scroll in NORMAL and walk history in INSERT. TAB completes.""",
+        "vim" to """Vim mode  (vim on / vim off)
+ INSERT  type commands.            ESC (button or key) -> NORMAL
+ NORMAL  j/k line   d/u half page   gg top   G bottom
+         /text search output   n next   N previous   i a o : -> INSERT
+ Up/Down buttons scroll in NORMAL and walk history in INSERT.""",
 
         "themes" to """Themes
- theme              list themes
- theme dracula      set a theme
- config font 15     font size (8-30)
- config username me prompt name
+ theme              list themes        theme dracula   set one
+ config font 15     font size (8-30)   config username me   prompt name
  Themes: """ + Themes.names().joinToString(", "),
 
         "ai" to """AI assistant (Gemini)
- sudo ai key <KEY>     save API key (needs password)
- ai <question>         ask anything, e.g. ai how do I list files in linux
+ sudo ai key <KEY>     save API key           ai <question>   ask anything
  ai model <name>       change model (default gemini-2.5-flash)
- The AI answers in text; it does not run commands yet."""
+ ai do <task>          AI proposes up to 6 commands, you confirm with y / n.
+                       It can never plan sudo, su, passwd, linux, uninstall, settings, lock or ai.""",
+
+        "pipes" to """Pipes, chaining, aliases, history
+ ls | grep chrome | head 3      filters: grep [-i] [-v], head [n], tail [n], wc [-l], sort [-r], uniq
+ ls; battery; date              run several commands
+ echo "hello   world"          quotes keep spacing
+ alias w='browse weather'       shortcut (ll and cls exist by default)    unalias w
+ !!  re-run last   !3  re-run #3   !op  last command starting with 'op'
+ history is kept across restarts; API keys are masked.""",
+
+        "tools" to """Tools
+ calc (2+3)*4^2            timer 25m pomodoro   (timer lists, timer cancel 1)
+ todo add milk / todo / todo done 1 / todo rm 1 / todo clear
+ torch on|off   df   free   which <cmd>
+ Timers only run while TermOS's process is alive."""
     )
 
     fun page(n: String): String =

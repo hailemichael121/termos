@@ -11,6 +11,7 @@
         android:id="@+id/status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:ellipsize="end"
         android:paddingStart="8dp"
         android:paddingTop="2dp"
         android:paddingEnd="8dp"
@@ -52,8 +53,11 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:autofillHints="none"
             android:background="@null"
+            android:hint="@null"
             android:imeOptions="actionSend"
+            android:importantForAutofill="no"
             android:inputType="text"
             android:typeface="monospace" />
     </LinearLayout>
@@ -75,5 +79,11 @@
         <Button android:id="@+id/btnTab" style="?android:attr/borderlessButtonStyle"
             android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
             android:minHeight="0dp" android:text="TAB" android:textSize="12sp" />
+        <Button android:id="@+id/btnCtrlC" style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
+            android:minHeight="0dp" android:text="^C" android:textSize="12sp" />
+        <Button android:id="@+id/btnPipe" style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
+            android:minHeight="0dp" android:text="|" android:textSize="14sp" />
     </LinearLayout>
 </LinearLayout>

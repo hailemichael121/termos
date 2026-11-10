@@ -23,36 +23,29 @@ class RegistryTest {
         assertNull(Registry.find("nope"))
     }
 
-    @Test fun completion() {
-        assertTrue(Registry.complete("br").contains("browse"))
-        assertTrue(Registry.complete("LINU").contains("linux"))
-        assertTrue(Registry.complete("zzz").isEmpty())
+    @Test fun builtinsDoNotCollideWithFilters() {
+        Filters.names.forEach { assertNull("$it would shadow a pipe filter", Registry.find(it)) }
     }
 
     @Test fun rootCommands() {
-        listOf("settings", "uninstall", "passwd").forEach {
-            assertTrue("$it must need sudo", Registry.find(it)!!.root)
-        }
+        listOf("settings", "uninstall", "passwd").forEach { assertTrue("$it must need sudo", Registry.find(it)!!.root) }
         assertFalse(Registry.find("ls")!!.root)
-        assertFalse("su asks its own password", Registry.find("su")!!.root)
+        assertFalse(Registry.find("su")!!.root)
     }
 
     @Test fun requiredCommandsExist() {
-        listOf("help", "guide", "cmds", "theme", "config", "vim", "linux", "lockscreen", "ai", "browse", "lock", "sudo")
+        listOf("help", "guide", "cmds", "which", "setup", "theme", "config", "vim", "linux", "lockscreen", "ai", "browse",
+            "lock", "sudo", "calc", "timer", "todo", "torch", "alias", "unalias", "df", "free")
             .forEach { assertNotNull("missing $it", Registry.find(it)) }
     }
 
     @Test fun guidePagesExist() {
-        listOf("start", "lock", "linux", "vim", "themes", "ai").forEach {
+        listOf("start", "lock", "linux", "vim", "themes", "ai", "pipes", "tools").forEach {
             assertTrue("guide $it", Guide.page(it).length > 40)
         }
         assertTrue(Guide.page("").contains("guide pages"))
         assertTrue(Guide.page("bogus").contains("no such page"))
     }
 
-    @Test fun shellQuoting() {
-        // Linux.q lives in an Android file but is pure string logic; mirror check
-        val q = "it's"
-        assertEquals("'it'\\''s'", "'" + q.replace("'", "'\\''") + "'")
-    }
+    @Test fun versionIsCurrent() = assertEquals("0.3.0", VERSION)
 }

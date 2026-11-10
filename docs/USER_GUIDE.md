@@ -1,28 +1,29 @@
-# TermOS 0.2 user guide
+# TermOS 0.3 user guide
 
-In the app: `help`, `help <cmd>`, `guide <page>`, `cmds` (availability).
+In the app: `help`, `help <cmd>`, `guide <page>` (start, lock, linux, vim, themes, ai, pipes, tools), `cmds`.
 
 ## First run
-1. Create a password (terminal unlock + sudo).
-2. Press Home -> TermOS -> Always.
-3. `lockscreen` -> set Android screen lock to None so TermOS is the only lock.
+Create a 6+ character password -> quick wizard (theme, vim, Gemini key) -> Home -> TermOS -> Always -> `lockscreen`.
 
-## Commands
-apps: `ls [filter]`, `open <name|n>`, `sudo uninstall <app>`
-web: `browse <url|words>`, `go <n>`, `back`
-ai: `sudo ai key <KEY>`, `ai <question>`, `ai model <name>`
-linux: `linux`, `linux shell`, `linux setup`, `linux run <cmd>`, `linux exec <cmd>`
-clipboard/notes: `copy`, `paste`, `note`, `notes [clear]`
-system: `battery`, `neofetch`, `date`, `whoami`, `history`, `clear`, `echo`, `wifi`, `bt`, `call`, `sudo settings`
-security: `lock`, `lockscreen`, `sudo`, `su`, `exit`, `sudo passwd`
-look: `theme [name]`, `config [theme|vim|font|autolock|username]`, `vim on|off`
+## Everyday
+| Do | Type |
+|----|------|
+| List / open apps | `ls`, `ls chrome`, `open 3`, `open maps` |
+| Search the web | `browse kotlin coroutines`, `go 2`, `back` |
+| Ask AI | `ai explain pipes`, `ai do turn on torch` (confirm with y) |
+| Calculate | `calc (2+3)*4^2` |
+| Timers / todo / notes | `timer 25m pomodoro`, `todo add milk`, `note idea` |
+| Real Linux | `linux`, `linux exec uname -a` (needs Termux, see `guide linux`) |
 
-## Vim mode (`vim on`)
-ESC -> NORMAL: `j k` line, `d u` half page, `gg G` top/bottom, `/text` search, `n N`, `i` insert.
+## Power features
+- Pipes: `ls | grep chrome | head 3` (grep, head, tail, wc, sort, uniq)
+- Chaining: `battery; date`   Aliases: `alias w='browse weather'`   History: `!!`, `!3`, `!op`
+- TAB completes commands, app names, themes, sub-options; ^C cancels; `|` key inserts a pipe.
+- Vim mode (`vim on`): ESC, `j k d u gg G`, `/search`, `n N`, `i`.
 
-## Linux (Termux + proot-distro)
-Install Termux (F-Droid), run `termux/setup-termux.sh` inside it, reopen, then `linux`.
+## Security
+Locks on screen-off, 3 wrong passwords add a growing wait, `sudo` remembers your password 5 minutes (`sudo -k` forgets).
+Android's own lock screen cannot be removed by an app; set it to None if you want TermOS as the only lock.
 
-## Limits
-Android's own lock screen can't be removed by an app; TermOS only replaces it when you set it to None.
-TermOS itself is not a Linux kernel/userland; `linux` hands off to Termux's real Ubuntu.
+## For developers
+`./test.sh` unit | `./check.sh` unit+lint | `./e2e.sh [--emulator]` acceptance | `./stress.sh` monkey+memory | docs/ACCEPTANCE.md
